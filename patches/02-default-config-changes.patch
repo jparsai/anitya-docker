@@ -1,0 +1,28 @@
+diff --git a/anitya/default_config.py b/anitya/default_config.py
+index 2afd636..35d5c17 100644
+--- a/anitya/default_config.py
++++ b/anitya/default_config.py
+@@ -10,6 +10,7 @@ anitya default configuration.
+ """
+ 
+ from datetime import timedelta
++import os
+ 
+ # Set the time after which the session expires
+ PERMANENT_SESSION_LIFETIME = timedelta(hours=1)
+@@ -18,7 +19,8 @@ PERMANENT_SESSION_LIFETIME = timedelta(hours=1)
+ SECRET_KEY = 'changeme please'
+ 
+ # URL to the database
+-DB_URL = 'sqlite:////var/tmp/anitya-dev.sqlite'
++DB_URL = os.getenv('ANITYA_DB_URL',
++                   default='sqlite:////var/tmp/anitya-dev.sqlite')
+ 
+ # List of admins based on their openid
+ ANITYA_WEB_ADMINS = [
+@@ -39,3 +41,5 @@ ANITYA_WEB_ALLOW_GENERIC_OPENID = True
+ ADMIN_EMAIL = 'admin@fedoraproject.org'
+ 
+ BLACKLISTED_USERS = []
++
++WTF_CSRF_ENABLED = False

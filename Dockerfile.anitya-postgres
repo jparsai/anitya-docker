@@ -1,0 +1,14 @@
+FROM centos/postgresql-94-centos7
+MAINTAINER Slavek Kabrda <slavek@redhat.com>
+
+USER 0
+
+RUN yum install -y python-pip python-alembic python-psycopg2 python-zmq python-devel gcc libffi-devel openssl-devel
+
+COPY files/run-postgresql /usr/bin/
+COPY files/postgres-post-init /usr/bin/
+
+USER 26
+
+COPY ./anitya/ /src
+RUN pip install --user -r /src/requirements.txt

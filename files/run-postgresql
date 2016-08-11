@@ -1,0 +1,32 @@
+#!/bin/bash
+
+set -eu
+export_vars=$(cgroup-limits) ; export $export_vars
+
+source "${CONTAINER_SCRIPTS_PATH}/common.sh"
+
+set_pgdata
+check_env_vars
+generate_passwd_file
+generate_postgresql_config
+
+DO_CREATE_USERS=no
+if [ ! -f "$PGDATA/postgresql.conf" ]; then
+  initialize_database
+  DO_CREATE_USERS=yes
+fi
+
+pg_ctl -w start -o "-h ''"
+if [ "$DO_CREATE_USERS" == "yes" ]; then
+  create_users
+fi
+set_passwords
+# we've overriden this file here to be able to add the handle_post_init function
+handle_post_init() {
+  ls /usr/bin/postgres-post-init &>/dev/null && source /usr/bin/postgres-post-init
+}
+handle_post_init
+pg_ctl stop
+
+unset_env_vars
+exec postgres "$@"

@@ -1,0 +1,17 @@
+#!/bin/bash
+set -xe
+
+echo "Starting database migration"
+
+pushd /src/
+python <<\EOF
+import anitya.lib
+
+anitya.lib.init(
+    'postgresql://anitya:anitya@/anitya',
+    '/src/alembic.ini',
+    debug=True,
+    create=True
+)
+EOF
+popd

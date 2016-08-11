@@ -1,0 +1,15 @@
+FROM fedora
+
+RUN dnf install -y gcc python-psycopg2 python-devel libffi-devel openssl-devel gcc-c++ redhat-rpm-config rpm-python && \
+    dnf autoremove -y && \
+    dnf clean all -y
+
+COPY ./anitya/ /src
+COPY ./files/runincontainer.sh /src
+COPY ./files/anitya-env.sh /src
+WORKDIR /src
+
+RUN pip install --user -r requirements.txt
+EXPOSE 5000
+# TODO: httpd
+ENTRYPOINT /src/runincontainer.sh

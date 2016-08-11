@@ -1,0 +1,13 @@
+diff --git a/alembic.ini b/alembic.ini
+index 813e782..ccf2a99 100644
+--- a/alembic.ini
++++ b/alembic.ini
+@@ -21,7 +21,7 @@ script_location = alembic
+ # sourceless = false
+ 
+ #sqlalchemy.url = driver://user:pass@localhost/dbname
+-sqlalchemy.url = sqlite:////var/tmp/anitya-dev.sqlite
++sqlalchemy.url = postgresql://anitya:anitya@/anitya
+ 
+ 
+ # Logging configuration

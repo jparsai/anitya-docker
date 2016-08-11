@@ -1,0 +1,29 @@
+version: "2"
+services:
+  postgres:
+    image: slavek/anitya-postgres
+    environment:
+      POSTGRESQL_USER: anitya
+      POSTGRESQL_PASSWORD: anitya
+      POSTGRESQL_DATABASE: anitya
+      POSTGRESQL_ADMIN_PASSWORD: anitya
+    network_mode: bridge
+    container_name: anitya-postgres
+  anitya:
+    image: slavek/anitya-server
+    ports:
+      - "31005:5000"
+    links:
+      - postgres
+    network_mode: bridge
+    container_name: anitya-server
+    environment:
+      ANITYA_POSTGRES_SERVICE_HOST: anitya-postgres
+  cron:
+    image: slavek/anitya-cron
+    links:
+      - postgres
+    network_mode: bridge
+    container_name: anitya-cron
+    environment:
+      ANITYA_POSTGRES_SERVICE_HOST: anitya-postgres

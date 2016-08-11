@@ -1,0 +1,1 @@
+* * * * * root /src/runcronjobincontainer.sh >> /var/tmp/anitya_cronscript.log 2>&1
