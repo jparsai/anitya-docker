@@ -1,0 +1,26 @@
+commit 0246e99331be3335a324e721b101f50752ecd9ec
+Author: Slavek Kabrda <bkabrda@redhat.com>
+Date:   Thu Aug 11 12:11:15 2016 +0200
+
+    Make anitya_cron use thread pool instead of process pool
+
+diff --git a/files/anitya_cron.py b/files/anitya_cron.py
+index dbf0512..be904f9 100644
+--- a/files/anitya_cron.py
++++ b/files/anitya_cron.py
+@@ -3,7 +3,14 @@
+ 
+ import sys
+ import logging
+-import multiprocessing
++# We need to use multiprocessing.dummy, since we use the Pool to run
++# update_project. This in turn uses anitya.lib.backends.BaseBackend.call_url,
++# which utilizes a global requests session. Requests session is not usable
++# with multiprocessing, since it would need to share the SSL connection between
++# processes (see https://stackoverflow.com/q/3724900#3724938).
++# multiprocessing.dummy.Pool is in fact a Thread pool, which works ok
++# with a global shared requests session.
++import multiprocessing.dummy as multiprocessing
+ 
+ import anitya
+ import anitya.app
