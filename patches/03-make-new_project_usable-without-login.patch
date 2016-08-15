@@ -1,5 +1,5 @@
 diff --git a/anitya/ui.py b/anitya/ui.py
-index 346c9e9..9fbb056 100644
+index 4dafa88..8e52a24 100644
 --- a/anitya/ui.py
 +++ b/anitya/ui.py
 @@ -328,7 +328,6 @@ def distro_projects_search(distroname, pattern=None):
@@ -16,6 +16,6 @@ index 346c9e9..9fbb056 100644
                  regex=form.regex.data.strip() or None,
 -                user_id=flask.g.auth.openid,
 +                user_id=0,
+                 check_release=form.check_release.data,
              )
              SESSION.commit()
- 
