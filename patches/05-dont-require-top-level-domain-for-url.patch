@@ -1,0 +1,13 @@
+diff --git a/anitya/forms.py b/anitya/forms.py
+index f54a142..6c4cc05 100644
+--- a/anitya/forms.py
++++ b/anitya/forms.py
+@@ -10,7 +10,7 @@ from wtforms import BooleanField
+ class ProjectForm(wtf.Form):
+     name = TextField('Project name', [validators.Required()])
+     homepage = TextField(
+-        'Homepage', [validators.Required(), validators.URL()])
++        'Homepage', [validators.Required(), validators.URL(require_tld=False)])
+     backend = SelectField(
+         'Backend',
+         [validators.Required()],
