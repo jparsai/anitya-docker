@@ -1,0 +1,422 @@
+From 4f698bd32e51eb97701d887420456cce30207f45 Mon Sep 17 00:00:00 2001
+From: Nick Coghlan <ncoghlan@gmail.com>
+Date: Mon, 8 Aug 2016 15:13:49 +1000
+Subject: [PATCH] WIP: Initial API for mapping uploads
+
+- write endpoint to monitor new projects (by ecosystem)
+- write endpoint to define new downstream mappings
+- read endpoint to retrieve downstream mappings by ecosystem
+---
+ anitya/api.py           | 182 +++++++++++++++++++++++++++++++++++++++++++++++-
+ anitya/lib/__init__.py  |  36 +++++++++-
+ tests/test_anityalib.py |  31 ++++++++-
+ tests/test_flask_api.py |  84 +++++++++++++++++++++-
+ 4 files changed, 326 insertions(+), 7 deletions(-)
+
+diff --git a/anitya/api.py b/anitya/api.py
+index fd6406f..1ae4f1b 100644
+--- a/anitya/api.py
++++ b/anitya/api.py
+@@ -1,6 +1,7 @@
+ # -*- coding: utf-8 -*-
+ 
+ import flask
++from werkzeug.exceptions import BadRequest
+ 
+ import anitya
+ import anitya.lib.plugins
+@@ -553,10 +554,10 @@ def api_get_project_distro(distro, package_name):
+ 
+ @APP.route('/api/by_ecosystem/<ecosystem>/<project_name>/', methods=['GET'])
+ @APP.route('/api/by_ecosystem/<ecosystem>/<project_name>', methods=['GET'])
+-def api_get_project_ecosystem(ecosystem, project_name):
++def api_get_project_in_ecosystem(ecosystem, project_name):
+     '''
+     Retrieve a project from a given ecosystem
+-    -------------------------------
++    -----------------------------------------
+     Retrieves a project in an ecosystem via the name of the ecosystem
+     and the name of the project as registered with Anitya.
+ 
+@@ -613,3 +614,180 @@ def api_get_project_ecosystem(ecosystem, project_name):
+     jsonout = flask.jsonify(output)
+     jsonout.status_code = httpcode
+     return jsonout
++
++
++@APP.route('/api/by_ecosystem/<ecosystem>/', methods=['POST'])
++@APP.route('/api/by_ecosystem/<ecosystem>', methods=['POST'])
++def api_add_project_in_ecosystem(ecosystem):
++    '''
++    Starts monitoring a project in the given ecosystem
++    --------------------------------------------------
++    Adds a new project in the given ecosystem to the set monitored by Anitya.
++    '''
++    ecosystem_ref = anitya.lib.model.Ecosystem.by_name(SESSION, ecosystem)
++
++    if not ecosystem:
++        output = {
++            'output': 'notok',
++            'error': 'Unknown ecosystem "%s"' % (ecosystem)
++        }
++        httpcode = 404
++    else:
++
++        data = None
++        try:
++            data = flask.request.get_json()
++            # TODO: Validate the input data properly
++            project_name = data['name'].strip()
++            # TODO: Allow an external home page to be set
++            homepage = data['homepage'].strip()
++            # TODO: Allow check_release to be set
++            check_release = data['check_release']
++        except (BadRequest, TypeError, KeyError):
++            output = {
++                'output': 'notok',
++                'error': 'Malformed input data'
++            }
++            httpcode = 400
++        else:
++            project = anitya.lib.model.Project.by_name_and_ecosystem(
++                SESSION, project_name, ecosystem)
++            if project is not None:
++                httpcode = 200
++            else:
++                user_id = getattr(flask.g.auth, 'openid',
++                                  'noreply@fedoraproject.org')
++                project = anitya.lib.create_project_in_ecosystem(
++                    SESSION,
++                    name=project_name,
++                    ecosystem=ecosystem_ref,
++                    homepage=homepage,
++                    user_id=user_id,
++                    check_release=check_release,
++                )
++                httpcode = 201
++            output = project.__json__(detailed=True)
++
++    jsonout = flask.jsonify(output)
++    jsonout.status_code = httpcode
++    return jsonout
++
++
++@APP.route('/api/downstreams/<ecosystem>/<project_name>/', methods=['GET'])
++@APP.route('/api/downstreams/<ecosystem>/<project_name>', methods=['GET'])
++def api_get_project_downstreams(ecosystem, project_name):
++    '''
++    Retrieve the downstream packages for a given project
++    ----------------------------------------------------
++    Retrieves the downstream packages for a project via the name of the
++    ecosystem and the name of the project as registered with Anitya.
++
++    ::
++
++        /api/downstreams/<ecosystem>/<project_name>
++
++    Accepts GET and POST queries.
++
++    :arg ecosystem: the name of the ecosystem (case insensitive).
++    :arg project_name: the name of the project in Anitya.
++
++    Sample GET response:
++
++    ::
++
++      {
++        "total": 1,
++        "downstreams": [
++          {
++            "distro": "Fedora",
++            "package_name": "python-six"
++          }
++        ]
++      }
++
++    '''
++
++    project = anitya.lib.model.Project.by_name_and_ecosystem(
++        SESSION, project_name, ecosystem)
++
++    if not project:
++        output = {
++            'output': 'notok',
++            'error': 'No project "%s" found in ecosystem "%s"' % (
++                project_name, ecosystem)}
++        httpcode = 404
++
++    else:
++        print(project.packages)
++        packages = project.__json__(detailed=True)['packages']
++        output = {
++            'total': len(packages),
++            'downstreams': packages
++        }
++        httpcode = 200
++
++    jsonout = flask.jsonify(output)
++    jsonout.status_code = httpcode
++    return jsonout
++
++
++@APP.route('/api/downstreams/<ecosystem>/<project_name>/', methods=['POST'])
++@APP.route('/api/downstreams/<ecosystem>/<project_name>', methods=['POST'])
++def api_link_project_downstream(ecosystem, project_name):
++    '''
++    Link an upstream project to a downstream package
++    ------------------------------------------------
++    '''
++    project = anitya.lib.model.Project.by_name_and_ecosystem(
++        SESSION, project_name, ecosystem)
++
++    if not project:
++        output = {
++            'output': 'notok',
++            'error': 'No project "%s" found in ecosystem "%s"' % (
++                project_name, ecosystem)
++        }
++        httpcode = 404
++    else:
++
++        data = None
++        try:
++            data = flask.request.get_json()
++            distro = data['distro']
++            package_name = data['package_name']
++        except (BadRequest, TypeError, KeyError):
++            output = {
++                'output': 'notok',
++                'error': 'Malformed input data'
++            }
++            httpcode = 400
++        else:
++            package = anitya.lib.model.Packages.by_package_name_distro(
++                SESSION, package_name, distro)
++            if package is not None:
++                httpcode = 200
++            else:
++                user_id = getattr(flask.g.auth, 'openid',
++                                  'noreply@fedoraproject.org')
++                # NOTE: map_project implicitly creates new distros, which
++                # isn't very resilient against typos in messages from clients
++                package = anitya.lib.map_project(
++                    SESSION,
++                    project=project,
++                    package_name=package_name,
++                    distribution=distro,
++                    user_id=user_id
++                )
++                # Unlike the create_* helpers, map_project currently needs
++                # an explicit commit following the call
++                SESSION.commit()
++                httpcode = 201
++            packages = project.__json__(detailed=True)['packages']
++            output = {
++                'total': len(packages),
++                'downstreams': packages
++            }
++
++    jsonout = flask.jsonify(output)
++    jsonout.status_code = httpcode
++    return jsonout
+diff --git a/anitya/lib/__init__.py b/anitya/lib/__init__.py
+index f388264..13de67e 100644
+--- a/anitya/lib/__init__.py
++++ b/anitya/lib/__init__.py
+@@ -80,12 +80,42 @@ def create_project(
+         session, name, homepage, user_id, backend='custom',
+         version_url=None, version_prefix=None, regex=None,
+         check_release=False):
+-    """ Create the project in the database.
+-
+-    """
++    """ Create a new project given its name and homepage URL """
+     # Set the ecosystem if there's one associated with the given backend
+     backend_ref = anitya.lib.model.Backend.by_name(session, name=backend)
+     ecosystem_ref = backend_ref.default_ecosystem
++    return _store_new_project(
++        session, name, homepage, user_id, backend,
++        version_url, version_prefix, regex, check_release,
++        ecosystem_ref
++    )
++
++def create_project_in_ecosystem(
++        session, name, ecosystem, user_id, homepage=None,
++        version_url=None, version_prefix=None, regex=None,
++        check_release=False):
++    """ Create a new project given a name and upstream ecosystem """
++    # Set the backend if there's one associated with the given ecosystem
++    backend = None
++    if ecosystem.default_backend is not None:
++        backend = ecosystem.default_backend.name
++
++    if homepage is None:
++        url_pattern = "https://release-monitoring.org/api/by_ecosystem/{}/{}"
++        homepage = url_pattern.format(ecosystem.name, name)
++
++    return _store_new_project(
++        session, name, homepage, user_id, backend,
++        version_url, version_prefix, regex, check_release,
++        ecosystem
++    )
++
++
++def _store_new_project(
++        session, name, homepage, user_id, backend,
++        version_url, version_prefix, regex, check_release,
++        ecosystem_ref):
++    """Internal helper to store new projects in the DB"""
+ 
+     project = anitya.lib.model.Project(
+         name=name,
+diff --git a/tests/test_anityalib.py b/tests/test_anityalib.py
+index f54358b..d4cfbf6 100644
+--- a/tests/test_anityalib.py
++++ b/tests/test_anityalib.py
+@@ -43,7 +43,7 @@ class AnityaLibtests(Modeltests):
+     """ AnityaLib tests. """
+ 
+     def test_create_project(self):
+-        """ Test the create_project function of Distro. """
++        """ Test the create_project helper function """
+         create_distro(self.session)
+         self.assertEqual(2, model.Distro.all(self.session, count=True))
+ 
+@@ -77,6 +77,35 @@ def test_create_project(self):
+         self.assertEqual(project_objs[0].name, 'geany')
+         self.assertEqual(project_objs[0].homepage, 'http://www.geany.org/')
+ 
++    def test_create_project_in_ecosystem(self):
++        ecosystem = anitya.lib.model.Ecosystem.by_name(self.session, "pypi")
++        anitya.lib.create_project_in_ecosystem(
++            self.session,
++            name='six',
++            ecosystem=ecosystem,
++            user_id='noreply@fedoraproject.org',
++        )
++
++        project_objs = anitya.lib.model.Project.all(self.session)
++        self.assertEqual(len(project_objs), 1)
++        self.assertEqual(project_objs[0].name, 'six')
++        self.assertEqual(project_objs[0].ecosystem.name, 'pypi')
++        expected_url = 'https://release-monitoring.org/api/by_ecosystem/pypi/six'
++        self.assertEqual(project_objs[0].homepage, expected_url)
++
++        self.assertRaises(
++            AnityaException,
++            anitya.lib.create_project_in_ecosystem,
++            self.session,
++            name='six',
++            ecosystem=ecosystem,
++            user_id='noreply@fedoraproject.org',
++        )
++
++        project_objs = anitya.lib.model.Project.all(self.session)
++        self.assertEqual(len(project_objs), 1)
++        self.assertEqual(project_objs[0].name, 'six')
++
+     def test_edit_project(self):
+         """ Test the edit_project function of Distro. """
+         create_distro(self.session)
+diff --git a/tests/test_flask_api.py b/tests/test_flask_api.py
+index f408557..7ce8181 100644
+--- a/tests/test_flask_api.py
++++ b/tests/test_flask_api.py
+@@ -409,7 +409,6 @@ def test_api_get_project_distro(self):
+ 
+     def test_api_get_project_by_ecosystem(self):
+         """ Test the api_get_project_ecosystem function of the API. """
+-        create_distro(self.session)
+         output = self.app.get('/api/by_ecosystem/pypi/pypi_and_npm')
+         self.assertEqual(output.status_code, 404)
+         data = _read_json(output)
+@@ -453,6 +452,89 @@ def test_api_get_project_by_ecosystem(self):
+ 
+         self.assertEqual(data, exp)
+ 
++
++    def test_api_add_project_in_ecosystem(self):
++        output = self.app.get('/api/by_ecosystem/pypi/six/')
++        self.assertEqual(output.status_code, 404)
++        data = _read_json(output)
++
++        exp = {
++            "error": 'No project "six" found in ecosystem "pypi"',
++            "output": "notok"
++        }
++        self.assertEqual(data, exp)
++
++        project_data = json.dumps({
++            "name": "six"
++        })
++        output = self.app.post('/api/by_ecosystem/pypi/',
++                               data = project_data,
++                               content_type = 'application/json')
++        self.assertEqual(output.status_code, 201)
++        expected = {
++            "id": 1,
++            "backend": "PyPI",
++            "homepage": "https://release-monitoring.org/api/by_ecosystem/pypi/six",
++            "name": "six",
++            "regex": None,
++            "version": None,
++            "version_url": None,
++            "versions": [],
++            "packages": [],
++        }
++        data = _read_json(output)
++        del(data['created_on'])
++        del(data['updated_on'])
++        self.assertEqual(data, expected)
++
++        output = self.app.post('/api/by_ecosystem/pypi/',
++                               data = project_data,
++                               content_type = 'application/json')
++        self.assertEqual(output.status_code, 200)
++        data = _read_json(output)
++        del(data['created_on'])
++        del(data['updated_on'])
++        self.assertEqual(data, expected)
++
++        projects = model.Project.all(self.session, count=True)
++        self.assertEqual(projects, 1)
++
++    def test_api_add_upstream_downstream_mapping(self):
++        project_data = json.dumps({
++            "name": "six"
++        })
++        output = self.app.post('/api/by_ecosystem/pypi/',
++                               data = project_data,
++                               content_type = 'application/json')
++        self.assertEqual(output.status_code, 201)
++
++        # Check adding the mapping (with implicit distro creation)
++        downstream_data = json.dumps({
++            "distro": "Fedora",
++            "package_name": "python-six",
++        })
++        output = self.app.post('/api/downstreams/pypi/six/',
++                               data = downstream_data,
++                               content_type = 'application/json')
++        self.assertEqual(output.status_code, 201)
++        expected = {
++            'total': 1,
++            'downstreams': [
++                {
++                    "distro": "Fedora",
++                    "package_name": "python-six",
++                }
++            ]
++        }
++        data = _read_json(output)
++        self.assertEqual(data, expected)
++
++        # Check retrieving the mapping
++        output = self.app.get('/api/downstreams/pypi/six/')
++        self.assertEqual(output.status_code, 200)
++        data = _read_json(output)
++        self.assertEqual(data, expected)
++
+ if __name__ == '__main__':
+     SUITE = unittest.TestLoader().loadTestsFromTestCase(AnityaWebAPItests)
+     unittest.TextTestRunner(verbosity=2).run(SUITE)
