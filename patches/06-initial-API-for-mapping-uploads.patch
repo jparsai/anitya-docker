@@ -38,7 +38,7 @@ index fd6406f..1ae4f1b 100644
      Retrieves a project in an ecosystem via the name of the ecosystem
      and the name of the project as registered with Anitya.
  
-@@ -613,3 +614,180 @@ def api_get_project_ecosystem(ecosystem, project_name):
+@@ -613,3 +614,178 @@ def api_get_project_ecosystem(ecosystem, project_name):
      jsonout = flask.jsonify(output)
      jsonout.status_code = httpcode
      return jsonout
@@ -67,10 +67,8 @@ index fd6406f..1ae4f1b 100644
 +            data = flask.request.get_json()
 +            # TODO: Validate the input data properly
 +            project_name = data['name'].strip()
-+            # TODO: Allow an external home page to be set
-+            homepage = data['homepage'].strip()
-+            # TODO: Allow check_release to be set
-+            check_release = data['check_release']
++            homepage = data.get('homepage', '').strip() or None
++            check_release = data.get('check_release', True)
 +        except (BadRequest, TypeError, KeyError):
 +            output = {
 +                'output': 'notok',
