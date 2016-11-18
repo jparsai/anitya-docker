@@ -1,5 +1,7 @@
 #!/bin/bash
 
+export ENABLE_REPLICATION=${ENABLE_REPLICATION:-false}
+
 set -eu
 export_vars=$(cgroup-limits) ; export $export_vars
 
@@ -10,14 +12,13 @@ check_env_vars
 generate_passwd_file
 generate_postgresql_config
 
-DO_CREATE_USERS=no
 if [ ! -f "$PGDATA/postgresql.conf" ]; then
   initialize_database
-  DO_CREATE_USERS=yes
+  NEED_TO_CREATE_USERS=yes
 fi
 
 pg_ctl -w start -o "-h ''"
-if [ "$DO_CREATE_USERS" == "yes" ]; then
+if [ "${NEED_TO_CREATE_USERS:-}" == "yes" ]; then
   create_users
 fi
 set_passwords
