@@ -1,4 +1,4 @@
-FROM centos/postgresql-94-centos7
+FROM registry.centos.org/sclo/postgresql-95-centos7:latest
 MAINTAINER Slavek Kabrda <slavek@redhat.com>
 
 USER 0
