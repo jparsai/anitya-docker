@@ -1,6 +1,6 @@
 FROM slavek/anitya-server
 
-RUN dnf install -y cronie
+RUN yum install -y cronie
 
 COPY files/anitya.crontab /etc/cron.d/
 RUN chmod 0644 /etc/cron.d/anitya.crontab
