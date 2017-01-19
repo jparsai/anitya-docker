@@ -6,7 +6,7 @@ USER 0
 RUN yum install -y epel-release && yum install -y python-pip python-alembic python-psycopg2 python-zmq python-devel gcc libffi-devel openssl-devel
 
 COPY ./anitya/ /src
-COPY ./files/run-db-migrations ./files/anitya-env.sh /src/
+COPY ./files/rundbmigrations.sh ./files/anitya-env.sh /src/
 
 RUN pip install -r /src/requirements.txt
 
@@ -16,5 +16,5 @@ USER 26
 
 WORKDIR /src
 
-CMD /src/run-db-migrations
+CMD /src/rundbmigrations.sh
 RUN ls -la /src
