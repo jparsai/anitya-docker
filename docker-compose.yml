@@ -32,6 +32,10 @@ services:
     container_name: anitya-server
     environment:
       ANITYA_POSTGRES_SERVICE_HOST: anitya-postgres
+      ANITYA_POSTGRES_SERVICE_PORT: 5432
+      POSTGRESQL_USER: anitya
+      POSTGRESQL_PASSWORD: anitya
+      POSTGRESQL_DATABASE: anitya
   cron:
     image: slavek/anitya-cron
     links:
@@ -40,3 +44,7 @@ services:
     container_name: anitya-cron
     environment:
       ANITYA_POSTGRES_SERVICE_HOST: anitya-postgres
+      ANITYA_POSTGRES_SERVICE_PORT: 5432
+      POSTGRESQL_USER: anitya
+      POSTGRESQL_PASSWORD: anitya
+      POSTGRESQL_DATABASE: anitya
