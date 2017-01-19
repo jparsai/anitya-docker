@@ -10,10 +10,10 @@ ifeq ($(wildcard anitya/.),)
 endif
 
 
-build: buildpostgres buildserver buildcron
+build: builddbmigrations buildserver buildcron
 
-buildpostgres: getsources Dockerfile.anitya-postgres files anitya
-	docker build -t slavek/anitya-postgres -f Dockerfile.anitya-postgres .
+builddbmigrations: getsources Dockerfile.anitya-db-migrations files anitya
+	docker build -t slavek/anitya-db-migrations -f Dockerfile.anitya-db-migrations .
 
 buildserver: getsources Dockerfile.anitya-server files anitya
 	docker build -t slavek/anitya-server -f Dockerfile.anitya-server .
