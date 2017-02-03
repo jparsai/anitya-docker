@@ -4,7 +4,7 @@ RUN yum install -y epel-release &&\
 		yum install -y gcc python-psycopg2 python2-pip python-devel libffi-devel openssl-devel gcc-c++ redhat-rpm-config rpm-python httpd httpd-devel &&\
     yum clean all
 
-COPY ./anitya/ ./files/runincontainer.sh ./files/anitya.wsgi ./files/anitya-env.sh /src/
+COPY ./anitya/ ./files/runincontainer.sh ./files/runupdatejob.sh ./files/anitya.wsgi ./files/anitya-env.sh /src/
 
 WORKDIR /src
 
