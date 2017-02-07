@@ -43,7 +43,6 @@ services:
     network_mode: bridge
     container_name: anitya-update-job
     entrypoint: /src/runupdatejob.sh
-    restart: always
     environment:
       ANITYA_POSTGRES_SERVICE_HOST: anitya-postgres
       ANITYA_POSTGRES_SERVICE_PORT: 5432
