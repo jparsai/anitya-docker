@@ -25,19 +25,15 @@ index fd6406f..1ae4f1b 100644
  
  import anitya
  import anitya.lib.plugins
-@@ -553,10 +554,10 @@ def api_get_project_distro(distro, package_name):
+@@ -553,7 +554,7 @@ def api_get_project_distro(distro, package_name):
  
  @APP.route('/api/by_ecosystem/<ecosystem>/<project_name>/', methods=['GET'])
  @APP.route('/api/by_ecosystem/<ecosystem>/<project_name>', methods=['GET'])
 -def api_get_project_ecosystem(ecosystem, project_name):
 +def api_get_project_in_ecosystem(ecosystem, project_name):
      '''
-     Retrieve a project from a given ecosystem
--    -------------------------------
-+    -----------------------------------------
      Retrieves a project in an ecosystem via the name of the ecosystem
      and the name of the project as registered with Anitya.
- 
 @@ -613,3 +614,180 @@ def api_get_project_ecosystem(ecosystem, project_name):
      jsonout = flask.jsonify(output)
      jsonout.status_code = httpcode
@@ -269,10 +265,10 @@ index f388264..13de67e 100644
  
      project = anitya.lib.model.Project(
          name=name,
-diff --git a/tests/test_anityalib.py b/tests/test_anityalib.py
+diff --git a/anitya/tests/lib/test_anityalib.py b/anitya/tests/lib/test_anityalib.py
 index f54358b..d4cfbf6 100644
---- a/tests/test_anityalib.py
-+++ b/tests/test_anityalib.py
+--- a/anitya/tests/lib/test_anityalib.py
++++ b/anitya/tests/lib/test_anityalib.py
 @@ -43,7 +43,7 @@ class AnityaLibtests(Modeltests):
      """ AnityaLib tests. """
  
@@ -318,10 +314,10 @@ index f54358b..d4cfbf6 100644
      def test_edit_project(self):
          """ Test the edit_project function of Distro. """
          create_distro(self.session)
-diff --git a/tests/test_flask_api.py b/tests/test_flask_api.py
+diff --git a/anitya/tests/test_flask_api.py b/anitya/tests/test_flask_api.py
 index f408557..7ce8181 100644
---- a/tests/test_flask_api.py
-+++ b/tests/test_flask_api.py
+--- a/anitya/tests/test_flask_api.py
++++ b/anitya/tests/test_flask_api.py
 @@ -409,7 +409,6 @@ def test_api_get_project_distro(self):
  
      def test_api_get_project_by_ecosystem(self):
