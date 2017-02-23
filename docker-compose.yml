@@ -16,6 +16,7 @@ services:
       POSTGRESQL_USER: anitya
       POSTGRESQL_PASSWORD: anitya
       POSTGRESQL_DATABASE: anitya
+      POSTGRESQL_INITIAL_DATABASE: postgres
     image: slavek/anitya-db-migrations
     restart: on-failure
     network_mode: bridge
