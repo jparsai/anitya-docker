@@ -10,10 +10,7 @@ ifeq ($(wildcard anitya/.),)
 endif
 
 
-build: builddbmigrations buildserver
-
-builddbmigrations: getsources Dockerfile.anitya-db-migrations files anitya
-	docker build -t slavek/anitya-db-migrations -f Dockerfile.anitya-db-migrations .
+build: buildserver
 
 buildserver: getsources Dockerfile.anitya-server files anitya
 	docker build -t slavek/anitya-server -f Dockerfile.anitya-server .

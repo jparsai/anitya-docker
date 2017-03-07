@@ -1,7 +1,7 @@
 version: "2"
 services:
   postgres:
-    image: registry.centos.org/sclo/postgresql-95-centos7:latest
+    image: registry.centos.org/sclo/postgresql-94-centos7:latest
     environment:
       POSTGRESQL_USER: anitya
       POSTGRESQL_PASSWORD: anitya
@@ -9,20 +9,6 @@ services:
       POSTGRESQL_ADMIN_PASSWORD: anitya
     network_mode: bridge
     container_name: anitya-postgres
-  db-migrations:
-    environment:
-      ANITYA_POSTGRES_SERVICE_HOST: anitya-postgres
-      ANITYA_POSTGRES_SERVICE_PORT: 5432
-      POSTGRESQL_USER: anitya
-      POSTGRESQL_PASSWORD: anitya
-      POSTGRESQL_DATABASE: anitya
-      POSTGRESQL_INITIAL_DATABASE: postgres
-    image: slavek/anitya-db-migrations
-    restart: on-failure
-    network_mode: bridge
-    container_name: anitya-db-migrations
-    links:
-      - postgres
   anitya:
     image: slavek/anitya-server
     ports:
@@ -37,6 +23,7 @@ services:
       POSTGRESQL_USER: anitya
       POSTGRESQL_PASSWORD: anitya
       POSTGRESQL_DATABASE: anitya
+      POSTGRESQL_INITIAL_DATABASE: postgres
   update-job:
     image: slavek/anitya-server
     links:
