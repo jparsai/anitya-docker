@@ -10,6 +10,9 @@ WORKDIR /src
 
 RUN pip install -r requirements.txt mod_wsgi
 
+# config.py file will be created when container starts
+ENV ANITYA_WEB_CONFIG /src/config.py
+
 EXPOSE 5000
 
 ENTRYPOINT /src/runincontainer.sh
