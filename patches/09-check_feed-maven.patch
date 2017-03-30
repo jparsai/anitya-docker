@@ -1,0 +1,86 @@
+diff --git a/anitya/lib/backends/maven.py b/anitya/lib/backends/maven.py
+index c9ab906..74f9df4 100644
+--- a/anitya/lib/backends/maven.py
++++ b/anitya/lib/backends/maven.py
+@@ -9,10 +9,14 @@
+ """
+ 
+ import re
++from subprocess import check_output, CalledProcessError
++import json
+ 
+ from anitya.lib.backends import BaseBackend, get_versions_by_regex
+ from anitya.lib.exceptions import AnityaPluginException
+-
++from anitya.lib.model import Project, NoResultFound
++from anitya.lib import init
++from anitya.app import APP
+ 
+ REGEX = r'\<a[^>]+\>(\d[^</]*)'
+ 
+@@ -70,3 +74,50 @@ class MavenBackend(BaseBackend):
+                           .replace(':', '/'))
+ 
+         return get_versions_by_regex(url, REGEX, project)
++
++    @classmethod
++    def check_feed(cls):
++        '''check_feed for Maven backend.
++
++        Return a generator over the latest 40 packages to Maven central index by
++        calling maven-index-checker application
++
++        Returns:
++            generator over new packages
++        '''
++        maven_url = 'http://repo2.maven.org/maven2'
++        if APP.config['JAVA_PATH'] is None:
++            raise AnityaPluginException('no java binary specified')
++        if APP.config['JAR_NAME'] is None:
++            raise AnityaPluginException('no maven-release-checker jar file specified')
++
++        try:
++            data = check_output([APP.config['JAVA_PATH'], "-jar",
++                                 APP.config['JAR_NAME']], universal_newlines=True)
++        except CalledProcessError:
++            raise AnityaPluginException('maven-release-checker exited with non zero value')
++
++        data = json.loads(data)
++        session = init(APP.config['DB_URL'])
++        for item in data[:40]:
++            item = json.loads(item)
++            # maven_coordinates are stored in db as version_url
++            maven_coordinates = '{group_id}:{artifact_id}'.\
++                format(group_id=item['groupId'], artifact_id=item['artifactId'])
++            try:
++                projects = session.query(Project).filter(
++                    Project.version_url == maven_coordinates).all()
++            except NoResultFound:
++                projects = None
++
++            if projects is not None:
++                # If there is project created it can have
++                # different name than maven_coordinates
++                name = projects[0].name
++                homepage = projects[0].homepage
++            else:
++                name = maven_coordinates
++                homepage = '{maven_url}/{artifact}'.\
++                    format(maven_url=maven_url, artifact=name.replace('.', '/').replace(':', '/'))
++            version = item['version']
++            yield name, homepage, cls.name, version
+diff --git a/files/anitya_cron.py b/files/anitya_cron.py
+index be904f9..ff58b8e 100644
+--- a/files/anitya_cron.py
++++ b/files/anitya_cron.py
+@@ -32,6 +32,10 @@ def indexed_listings():
+             # Not all backends have the check_feed classmethod implemented,
+             # and that's okay...  Just ignore them for now.
+             continue
++        except Exception as e:
++            # In case that some backend checking fails
++            LOG.error("Caught exception while checking backend %r: %s - %s",
++                      backend, type(e), e)
+ 
+ 
+ def projects_by_feed(session):

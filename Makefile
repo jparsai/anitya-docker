@@ -1,4 +1,4 @@
-CHECKOUT=master
+CHECKOUT=f3e5d03d64833c74ef765788c513099a2c9e4d69
 
 all: build
 
