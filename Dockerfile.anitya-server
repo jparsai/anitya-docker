@@ -1,8 +1,11 @@
 FROM registry.centos.org/centos/centos:7
 
 RUN yum install -y epel-release &&\
-		yum install -y gcc python-psycopg2 python2-pip python-devel python-alembic postgresql libffi-devel openssl-devel gcc-c++ redhat-rpm-config rpm-python httpd httpd-devel &&\
+		yum install -y gcc python-psycopg2 python2-pip python-devel python-alembic postgresql libffi-devel openssl-devel gcc-c++ redhat-rpm-config rpm-python httpd httpd-devel java maven git &&\
     yum clean all
+
+ENV INDEXER=maven-index-checker
+RUN git clone https://github.com/pkajaba/$INDEXER.git && pushd $INDEXER && mvn clean package && popd
 
 COPY ./anitya/ ./files/runincontainer.sh ./files/runupdatejob.sh ./files/rundbmigrations.sh ./files/anitya.wsgi ./files/anitya-env.sh /src/
 
@@ -10,8 +13,9 @@ WORKDIR /src
 
 RUN pip install -r requirements.txt mod_wsgi
 
-# config.py file will be created when container starts
 ENV ANITYA_WEB_CONFIG /src/config.py
+RUN echo JAR_NAME = \'$(find /$INDEXER -name "$INDEXER-*-jar-with-dependencies.jar" | head -n 1)\' >> $ANITYA_WEB_CONFIG && \
+    echo JAVA_PATH = \'/usr/bin/java\' >> $ANITYA_WEB_CONFIG
 
 EXPOSE 5000
 
