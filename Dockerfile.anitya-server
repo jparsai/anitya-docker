@@ -15,7 +15,8 @@ RUN pip install -r requirements.txt mod_wsgi
 
 ENV ANITYA_WEB_CONFIG /src/config.py
 RUN echo JAR_NAME = \'$(find /$INDEXER -name "$INDEXER-*-jar-with-dependencies.jar" | head -n 1)\' >> $ANITYA_WEB_CONFIG && \
-    echo JAVA_PATH = \'/usr/bin/java\' >> $ANITYA_WEB_CONFIG
+    echo JAVA_PATH = \'/usr/bin/java\' >> $ANITYA_WEB_CONFIG && \
+    chmod a+r $ANITYA_WEB_CONFIG
 
 EXPOSE 5000
 
