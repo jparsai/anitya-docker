@@ -61,15 +61,15 @@ objects:
               scheme: HTTP
             initialDelaySeconds: 10
             periodSeconds: 60
-            timeoutSeconds: 6
+            timeoutSeconds: 10
           livenessProbe:
             httpGet:
-              path: /api/projects/names
+              path: /api/distro/names
               port: 5000
               scheme: HTTP
             initialDelaySeconds: 10
             periodSeconds: 60
-            timeoutSeconds: 6
+            timeoutSeconds: 10
           resources:
             limits:
               memory: "512Mi"
