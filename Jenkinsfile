@@ -4,7 +4,7 @@
 def commitId
 node('docker') {
 
-    def image = docker.image('slavek/anitya-server')
+    def image = docker.image('bayesian/anitya-server')
 
     stage('Checkout') {
         checkout scm
