@@ -13,7 +13,7 @@ endif
 build: buildserver
 
 buildserver: getsources Dockerfile.anitya-server files anitya
-	docker build -t slavek/anitya-server -f Dockerfile.anitya-server .
+	docker build -t bayesian/anitya-server -f Dockerfile.anitya-server .
 
 clean:
 	rm -rf anitya/
