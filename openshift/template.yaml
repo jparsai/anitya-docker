@@ -160,7 +160,7 @@ parameters:
   displayName: Docker image
   required: true
   name: DOCKER_IMAGE
-  value: "slavek/anitya-server"
+  value: "bayesian/anitya-server"
 
 - description: Image tag
   displayName: Image tag
